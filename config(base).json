@@ -2,7 +2,7 @@
     "source_dir": "/YOUR_SOURCE_FOLDER",
     "upload_dir": "/YOUR_UPLOAD_FOLDER",
     "completed_dir": "/YOUR_COMPLETED_FOLDER",
-    "db_path": "/YOUR_DB_PATH/photo_workflow.db",
+    "db_path": "/YOUR_DB_PATH/video_workflow.db",
     "min_size_mb": 100,
     "webhook_url": "https://discord.com/api/webhooks/YOUR_DISCORD_WEBHOOK_URL",
     "extensions": [".mp4", ".mov", ".MP4", ".MOV"]
