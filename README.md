@@ -1,74 +1,214 @@
-# Synology Workflow Scripts
+# Video Workflow Automation Script
 
-## Copy for YouTube (Upload Workflow)
+[🇰🇷 한국어 문서](README%20(한국어).md)
 
-이 스크립트는 NAS에 저장된 대용량 영상 파일을 유튜브 업로드 전용 폴더로 자동 복사하고, 진행 상황을 DB로 관리하며 Discord로 리포트를 전송하는 자동화 워크플로우입니다.
+An automated workflow script designed to manage large video files with state tracking, automatic copying, and Discord notifications. While originally created for YouTube upload workflows, this versatile tool can be adapted for various media management purposes.
 
-### ⚙️ 설치 및 설정 (Installation & Configuration)
+## 📋 Table of Contents
+- [Overview](#overview)
+- [Use Cases](#use-cases)
+- [Key Features](#key-features)
+- [Installation & Configuration](#installation--configuration)
+- [Usage](#usage)
+- [Status Lifecycle](#status-lifecycle)
+- [Configuration Reference](#configuration-reference)
+- [License](#license)
 
-이 프로젝트를 다운로드한 후, 사용자 환경에 맞게 설정을 변경해야 합니다.
+## Overview
 
-1. **설정 파일 준비**:
-   - `config(base).json` 파일의 이름을 `config.json`으로 변경합니다.
-   - `config.json` 파일을 열어 본인의 Synology 경로와 Webhook 주소 등을 입력합니다.
-     ```json
-     {
-         "source_dir": "/YOUR_SOURCE_FOLDER",
-         "upload_dir": "/YOUR_UPLOAD_FOLDER",
-         "completed_dir": "/YOUR_COMPLETED_FOLDER",
-         "db_path": "/YOUR_DB_PATH/video_workflow.db",
-         "min_size_mb": 100,
-         "webhook_url": "https://discord.com/api/webhooks/YOUR_DISCORD_WEBHOOK_URL",
-         "extensions": [".mp4", ".mov", ".MP4", ".MOV"]
-     }
-     ```
-   - **주의**: `config.json` 파일은 개인 정보를 포함하므로 외부에 공유되지 않도록 주의하세요 (`.gitignore`에 포함되어 있습니다).
+This Python-based automation script monitors a source directory for large video files, automatically copies them to a target directory, tracks their processing state using an SQLite database, and optionally sends summary reports via Discord webhooks. The system is ideal for NAS environments like Synology, but can be used on any Linux-based system.
 
-2. **실행 권한 부여**:
-   - `.sh` 스크립트가 실행될 수 있도록 권한을 변경합니다.
+## Use Cases
+
+This script can be adapted for multiple purposes:
+
+### 1. **YouTube Upload Workflow** (Primary Use Case)
+Automatically prepare video files for YouTube upload by copying them to an upload staging area, tracking upload progress, and managing completed uploads.
+
+### 2. **Large File Backup Automation**
+Monitor a directory for large video files and automatically copy them to backup storage, maintaining a complete audit trail of all backup operations.
+
+### 3. **Video Processing Pipeline**
+Set up a multi-stage video processing workflow where files move through different directories as they progress through editing, rendering, and publishing stages.
+
+### 4. **Media Archive Management**
+Organize and track large media files as they move from active storage to archive storage, with automatic detection and status tracking.
+
+### 5. **Cloud Storage Sync Preparation**
+Prepare large video files for cloud uploads by staging them in a sync folder, tracking which files have been successfully synced.
+
+### 6. **Content Distribution Workflow**
+Manage content distribution by automatically copying finished videos to distribution folders and tracking which platforms have received each file.
+
+## Key Features
+
+- **Automatic File Discovery**: Scans source directory for video files meeting size criteria (default: 100MB+)
+- **Configurable File Types**: Supports custom file extensions (`.mp4`, `.mov`, `.avi`, etc.)
+- **State Management**: SQLite database tracks file status throughout the workflow
+- **History Tracking**: Complete audit trail of all state changes with timestamps
+- **Automatic Directory Creation**: Creates required directories if they don't exist
+- **Discord Integration**: Optional webhook notifications for daily summary reports
+- **Error Handling**: Robust error handling with detailed logging
+- **Scheduler Ready**: Designed to run via cron or task scheduler
+
+## Installation & Configuration
+
+### Prerequisites
+- Python 3.x
+- Bash shell (for Linux/Unix systems)
+- SQLite3 (usually included with Python)
+
+### Step 1: Download the Project
+Clone or download this repository to your system.
+
+### Step 2: Configure Settings
+1. Rename `config(base).json` to `config.json`
+2. Edit `config.json` with your specific paths and settings:
+
+```json
+{
+    "source_dir": "/path/to/source/folder",
+    "upload_dir": "/path/to/target/folder",
+    "completed_dir": "/path/to/completed/folder",
+    "db_path": "/path/to/database/video_workflow.db",
+    "min_size_mb": 100,
+    "webhook_url": "https://discord.com/api/webhooks/YOUR_WEBHOOK_URL",
+    "extensions": [".mp4", ".mov", ".MP4", ".MOV"]
+}
+```
+
+**Configuration Options:**
+- `source_dir`: Directory to monitor for new video files
+- `upload_dir`: Target directory where files will be copied
+- `completed_dir`: Directory where processed files are moved
+- `db_path`: Path to SQLite database file
+- `min_size_mb`: Minimum file size in MB to process (default: 100)
+- `webhook_url`: Discord webhook URL for notifications (optional)
+- `extensions`: List of file extensions to monitor
+
+**Important:** The `config.json` file is excluded from git (via `.gitignore`) to protect your sensitive information.
+
+### Step 3: Set Permissions
+Make the shell script executable:
+
+```bash
+chmod +x copy_for_youtube.sh
+# or
+chmod 755 copy_for_youtube.sh
+```
+
+### Step 4: Verify File Structure
+Ensure `copy_for_youtube.py` and `copy_for_youtube.sh` are in the same directory (the shell script uses relative paths).
+
+## Usage
+
+### Manual Execution
+
+#### Standard Run
+Scans for new files and performs copy operations:
+```bash
+bash /path/to/copy_for_youtube.sh
+```
+
+#### Report Run with Notification
+Executes workflow and sends summary to Discord:
+```bash
+bash /path/to/copy_for_youtube.sh notify
+```
+
+### Automated Scheduling
+
+#### Using Cron (Linux/Unix)
+Add to your crontab (`crontab -e`):
+
+```bash
+# Run every 30 minutes
+*/30 * * * * bash /path/to/copy_for_youtube.sh
+
+# Send daily report at 2 AM
+0 2 * * * bash /path/to/copy_for_youtube.sh notify
+```
+
+#### Using Synology Task Scheduler
+1. Open Control Panel → Task Scheduler
+2. Create → Scheduled Task → User-defined script
+3. Schedule: Set your preferred frequency
+4. Task Settings → User-defined script:
    ```bash
-   chmod 755 copy_for_youtube.sh
-   # 또는
-   chmod +x copy_for_youtube.sh
+   bash /path/to/copy_for_youtube.sh
    ```
 
-3. **파일 위치 확인**:
-   - `copy_for_youtube.py`와 `copy_for_youtube.sh` 파일은 반드시 **동일한 폴더**에 위치해야 합니다. (쉘 스크립트가 파이썬 스크립트를 상대 경로로 찾습니다.)
+## Status Lifecycle
 
-### 1. 주요 기능
-- **자동 스캔**: 소스 폴더(config.json의 `source_dir`)에서 100MB 이상의 `.mp4`, `.mov` 파일을 검색합니다.
-- **자동 복사**: 검색된 파일 중 아직 처리되지 않은 파일(Status 0)을 업로드 폴더(config.json의 `upload_dir`)로 복사합니다.
-- **상태 추적**: SQLite 데이터베이스를 통해 파일의 처리 상태를 관리합니다.
-- **완료 처리**: 유튜브 업로드가 완료되어 파일이 `Complete` 폴더(config.json의 `completed_dir`)로 이동되면, DB 상태를 업데이트합니다.
-- **알림 전송 (옵션)**: `webhook_url`이 설정된 경우, 일일 작업 처리 현황을 Discord로 전송합니다.
+The script manages three states for each file:
 
-### 2. 실행 방법 (Task Scheduler)
+| Status | Description | Trigger |
+|--------|-------------|---------|
+| **0 (New)** | File discovered in source directory, meets size criteria | Automatic scan |
+| **1 (Copied)** | File successfully copied to target directory | After copy operation |
+| **2 (Completed)** | File found in completed directory, processing finished | File moved to completed dir |
 
-#### 표준 실행 (Standard Run)
-주기적으로 실행되어 신규 파일을 스캔하고 복사 작업을 수행합니다.
-```bash
-bash /PATH/TO/YOUR/SCRIPT/copy_for_youtube.sh
+### Workflow Diagram
+```
+[Source Dir] → Status 0 (New) 
+    ↓ (Auto Copy)
+[Upload Dir] → Status 1 (Copied)
+    ↓ (Manual/External Process)
+[Completed Dir] → Status 2 (Completed)
 ```
 
-#### 리포트 실행 (Report Run)
-하루에 한 번(주로 밤/새벽) 실행하여 당일 처리 현황을 Discord로 알림을 보냅니다. `notify` 인자를 전달합니다.
-*`webhook_url`이 설정되어 있어야 작동합니다.*
-```bash
-bash /PATH/TO/YOUR/SCRIPT/copy_for_youtube.sh notify
+## Configuration Reference
+
+### Directory Structure Example
+```
+/volume1/video/
+├── raw/              # source_dir - New recordings
+├── upload/           # upload_dir - Ready for processing
+├── completed/        # completed_dir - Finished files
+└── workflow.db       # db_path - SQLite database
 ```
 
-### 3. 상세 로직 및 경로 정보
+### Database Schema
+```sql
+CREATE TABLE files (
+    filepath TEXT PRIMARY KEY,
+    filename TEXT,
+    status INTEGER DEFAULT 0,
+    detected_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    history TEXT DEFAULT ''
+);
+```
 
-| 항목 | 경로 / 설명 |
-| :--- | :--- |
-| **스크립트 위치** | `config.json`이 위치한 폴더 (Git 프로젝트 폴더) |
-| **소스 폴더** | `source_dir` (config.json 설정값) |
-| **타겟 폴더** | `upload_dir` (config.json 설정값) |
-| **완료 폴더** | `completed_dir` (config.json 설정값) |
-| **데이터베이스** | `db_path` (config.json 설정값) |
-| **로그 히스토리** | DB 내 `history` 컬럼에 상태 변경 이력 기록 |
+### Discord Notification Format
+When using `notify` parameter, the script sends a Discord embed with:
+- New files discovered (24h)
+- Files copied to upload directory (24h)
+- Files marked as completed (24h)
+- Total database statistics by status
 
-#### 상태(Status) 라이프사이클
-1. **Status 0 (New)**: 소스 폴더에서 100MB 이상 영상 파일 발견. DB 등록.
-2. **Status 1 (Copied)**: 타겟 폴더로 복사 완료. (업로드 대기 중)
-3. **Status 2 (Completed)**: 타겟 폴더에서 파일이 사라지고 `Complete` 폴더에서 발견됨. (업로드 완료)
+## Troubleshooting
+
+### Common Issues
+
+**Issue:** Script doesn't find new files
+- Verify `source_dir` path is correct
+- Check file size meets `min_size_mb` threshold
+- Confirm file extensions match `extensions` list
+
+**Issue:** Copy operation fails
+- Check write permissions on `upload_dir`
+- Verify sufficient disk space
+- Review error messages in console output
+
+**Issue:** Discord notifications not working
+- Verify `webhook_url` is valid
+- Test webhook URL manually
+- Check network connectivity
+
+## License
+
+This project is licensed under the Apache License 2.0. See [LICENSE](LICENSE) file for details.
+
+## Contributing
+
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on the contribution process.
