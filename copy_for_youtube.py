@@ -158,7 +158,7 @@ def send_discord_summary(summary):
     cursor.execute("SELECT status, count(*) FROM files GROUP BY status")
     stats = dict(cursor.fetchall())
     total_stats = (
-        f"대기: {stats.get(0,0)} / 업로드중: {stats.get(1,0)} / 완료: {stats.get(2,0)}"
+        f"대기: {stats.get(0, 0)} / 업로드중: {stats.get(1, 0)} / 완료: {stats.get(2, 0)}"
     )
     embed.add_embed_field(name="누적 DB 통계", value=total_stats, inline=False)
 
