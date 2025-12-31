@@ -109,8 +109,8 @@ def run_workflow(conn):
                 (new_history, path),
             )
             summary["copied"] += 1
-        except:
-            pass
+        except (OSError, IOError) as e:
+            print(f"[ERROR] Failed to copy '{path}' to '{os.path.join(UPLOAD_DIR, name)}': {e}", file=sys.stderr)
 
     # 3. 완료 확인 (Status 1 -> 2)
     cursor.execute("SELECT filepath, filename, history FROM files WHERE status = 1")
