@@ -139,7 +139,7 @@ def run_workflow(conn):
 
 
 # --- Discord 알림 전송 ---
-def send_discord_summary(summary):
+def send_discord_summary(summary, conn):
     # Webhook URL이 없거나 유효하지 않으면 전송 생략
     if (
         not WEBHOOK_URL
@@ -164,7 +164,6 @@ def send_discord_summary(summary):
     embed.add_embed_field(name="처리 현황 (24시간)", value=status_text, inline=False)
 
     # DB 통계 추가
-    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("SELECT status, count(*) FROM files GROUP BY status")
     stats = dict(cursor.fetchall())
@@ -184,6 +183,6 @@ if __name__ == "__main__":
 
     # 인자값에 'notify'가 포함되어 있을 때만 디스코드 전송 (하루 한 번용)
     if len(sys.argv) > 1 and sys.argv[1] == "notify":
-        send_discord_summary(res)
+        send_discord_summary(res, db_conn)
 
     db_conn.close()
