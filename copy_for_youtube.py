@@ -41,7 +41,18 @@ if not all([SOURCE_DIR, UPLOAD_DIR, COMPLETED_DIR, DB_PATH]):
     print("Error: Missing required config values")
     sys.exit(1)
 
-
+# Ensure required directories exist (create them if necessary)
+for dir_label, dir_path in [
+    ("SOURCE_DIR", SOURCE_DIR),
+    ("UPLOAD_DIR", UPLOAD_DIR),
+    ("COMPLETED_DIR", COMPLETED_DIR),
+]:
+    if not os.path.isdir(dir_path):
+        try:
+            os.makedirs(dir_path, exist_ok=True)
+        except OSError as e:
+            print(f"Error: Cannot create directory for {dir_label} ('{dir_path}'): {e}")
+            sys.exit(1)
 # --- DB 초기화 ---
 def init_db():
     # DB 경로의 디렉토리가 없으면 생성
